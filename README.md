@@ -26,6 +26,11 @@ pnpm build
 pnpm lint:check
 ```
 
+## Acknowledgements
+
+- [Zotero Glass](https://github.com/Avi7ii/Zotero-glass): Native glass materials for Zotero on macOS
+- @windingwind for providing the idea
+
 ## License
 
 [AGPL-3.0-or-later](./LICENSE)
