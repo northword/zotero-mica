@@ -1,0 +1,230 @@
+/* ============================================================
+ * zotero-mica
+ * Makes Zotero windows translucent so the Windows Mica / Acrylic
+ * DWM backdrop shows through.
+ *
+ * Section 0 (the construction-time transparency trigger for main
+ * windows) is intentionally NOT scoped by `[zotero-mica]`: it must
+ * be active before the main window is built (see the comment there).
+ * Everything else is scoped strictly by the `[zotero-mica]`
+ * attribute set on the document element by the plugin, with the
+ * visible tint keyed on the `--mica-intensity` inline custom
+ * property (0..1).
+ * ============================================================ */
+
+/* ==================================================================
+ * 0. Transparent-capable main windows (always active).
+ *
+ * On Windows the widget's TransparencyMode is decided exactly once, when
+ * the root frame is constructed (PresShell::SyncWindowProperties →
+ * GetFrameTransparency): an opaque root background at that moment means the
+ * window stays opaque forever, no matter what CSS does later. The plugin
+ * therefore registers this sheet synchronously in onStartup(), BEFORE the
+ * main window is created, and this rule is NOT gated on the runtime
+ * [zotero-mica] attribute — it matches the main window from the very first
+ * style computation.
+ *
+ * `navigator:browser` is Zotero's main-window windowtype (zoteroPane.xhtml),
+ * but dialogs and viewer windows (e.g. zotero:pref, zotero:basicViewer) get
+ * the same construction-time capability — they are opened after the sheet is
+ * registered, so gating on any [windowtype] covers them all and lets the
+ * whole-window DWM backdrop show in dialogs too. The alpha is a tiny 0.08 so
+ * the window still looks normal whenever the plugin is disabled; being < 255
+ * is all GetFrameTransparency needs to enter TransparencyMode::Transparent
+ * (⇒ DwmExtendFrameIntoClientArea(-1), a full-sheet glass region through
+ * which the DWM backdrop shines).
+ * ================================================================== */
+:root[windowtype] {
+  -moz-appearance: none !important;
+  background-color: rgb(240 240 240 / 0.08) !important;
+}
+
+/* ------------------------------------------------------------------
+ * 1. Trigger per-pixel transparency + tint the whole window.
+ *    An alpha < 255 on the root background makes Gecko enter
+ *    TransparencyMode::Transparent (nsLayoutUtils::GetFrameTransparency),
+ *    which drives DwmExtendFrameIntoClientArea(-1) and lets the DWM
+ *    backdrop show through every translucent pixel.
+ * ------------------------------------------------------------------ */
+/* NOTE: scoped to XUL windows (`:not(html)`) — the root transparency must
+ * not compete with the injected author stylesheet inside inner HTML docs
+ * (about:addons etc.), where agent `!important` would incorrectly win the
+ * cascade over author `!important`. */
+:root[zotero-mica]:not(html) {
+  /* Defaults; overridden inline by the plugin */
+  --mica-intensity: 0.5;
+  --mica-tint: 249 249 249;
+  /* base alpha of the root tint, before intensity */
+  --mica-root-alpha: 0.42;
+  -moz-appearance: none !important;
+  background-color: rgb(var(--mica-tint) / calc(var(--mica-root-alpha) * (0.35 + var(--mica-intensity)))) !important;
+}
+
+/* Light */
+@media (prefers-color-scheme: light) {
+  :root[zotero-mica] {
+    --mica-tint: 249 249 249;
+
+    --color-background: rgb(250 250 250 / calc(var(--mica-intensity) * 0.55 + 0.12)) !important;
+    --color-background30: rgb(255 255 255 / calc(var(--mica-intensity) * 0.3 + 0.08)) !important;
+    --color-background50: rgb(255 255 255 / calc(var(--mica-intensity) * 0.5 + 0.08)) !important;
+    --color-background70: rgb(255 255 255 / calc(var(--mica-intensity) * 0.7 + 0.08)) !important;
+    --color-sidepane: rgb(242 242 242 / calc(var(--mica-intensity) * 0.52 + 0.1)) !important;
+    --color-tabbar: rgb(242 242 242 / calc(var(--mica-intensity) * 0.5 + 0.1)) !important;
+    --color-toolbar: rgb(249 249 249 / calc(var(--mica-intensity) * 0.46 + 0.1)) !important;
+    --color-panedivider: rgb(218 218 218 / calc(var(--mica-intensity) * 0.55 + 0.1)) !important;
+    /* menus stay readable */
+    --color-menu: rgb(246 246 246 / 0.97) !important;
+  }
+}
+
+/* Dark */
+@media (prefers-color-scheme: dark) {
+  :root[zotero-mica] {
+    --mica-tint: 30 30 30;
+
+    --color-background: rgb(30 30 30 / calc(var(--mica-intensity) * 0.55 + 0.12)) !important;
+    --color-background30: rgb(30 30 30 / calc(var(--mica-intensity) * 0.3 + 0.08)) !important;
+    --color-background50: rgb(30 30 30 / calc(var(--mica-intensity) * 0.5 + 0.08)) !important;
+    --color-background70: rgb(30 30 30 / calc(var(--mica-intensity) * 0.7 + 0.08)) !important;
+    --color-sidepane: rgb(48 48 48 / calc(var(--mica-intensity) * 0.55 + 0.1)) !important;
+    --color-tabbar: rgb(30 30 30 / calc(var(--mica-intensity) * 0.55 + 0.1)) !important;
+    --color-toolbar: rgb(39 39 39 / calc(var(--mica-intensity) * 0.52 + 0.1)) !important;
+    --color-panedivider: rgb(64 64 64 / calc(var(--mica-intensity) * 0.55 + 0.1)) !important;
+    --color-menu: rgb(40 40 40 / 0.97) !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * 2. Drop hard-coded opaque backgrounds on the structural surfaces.
+ * ------------------------------------------------------------------ */
+:root[zotero-mica] window,
+:root[zotero-mica] #zotero-pane,
+:root[zotero-mica] #zotero-pane-stack,
+:root[zotero-mica] #zotero-collections-pane,
+:root[zotero-mica] #zotero-items-pane,
+:root[zotero-mica] #zotero-items-pane-container,
+:root[zotero-mica] #zotero-item-pane,
+:root[zotero-mica] #zotero-context-pane,
+:root[zotero-mica] #zotero-context-pane-inner,
+:root[zotero-mica] #zotero-tag-selector,
+:root[zotero-mica] .zotero-pane {
+  -moz-appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Title bar & tab bar */
+:root[zotero-mica] #zotero-title-bar,
+:root[zotero-mica] #tab-bar-container,
+:root[zotero-mica] #zotero-tabs-toolbar,
+:root[zotero-mica] .zotero-toolbar,
+:root[zotero-mica] #zotero-toolbar-collection-tree,
+:root[zotero-mica] #zotero-toolbar-item-tree {
+  -moz-appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Toolbars inside panes usually draw their own surface; keep them
+ * translucent for a uniform glass look. */
+:root[zotero-mica] #zotero-collections-toolbar,
+:root[zotero-mica] #zotero-items-toolbar {
+  border-color: color-mix(in srgb, currentColor 12%, transparent) !important;
+}
+
+/* Trees / virtualized tables */
+:root[zotero-mica] tree,
+:root[zotero-mica] treechildren,
+:root[zotero-mica] richlistbox,
+:root[zotero-mica] listbox,
+:root[zotero-mica] #zotero-collections-tree,
+:root[zotero-mica] #zotero-items-tree,
+:root[zotero-mica] #zotero-tree,
+:root[zotero-mica] .virtualized-table,
+:root[zotero-mica] .virtualized-table-body,
+:root[zotero-mica] .virtualized-table-container,
+:root[zotero-mica] .windowed-list,
+:root[zotero-mica] .windowed-list-inner-container {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Table headers */
+:root[zotero-mica] .virtualized-table-header {
+  background-color: color-mix(in srgb, currentColor 3%, transparent) !important;
+  background-image: none !important;
+}
+
+/* Domestic inner layers */
+:root[zotero-mica] browser {
+  -moz-appearance: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Splitters */
+:root[zotero-mica] .splitter,
+:root[zotero-mica] #zotero-collections-splitter,
+:root[zotero-mica] #zotero-items-splitter,
+:root[zotero-mica] #zotero-context-splitter,
+:root[zotero-mica] #zotero-tags-splitter {
+  background-color: transparent !important;
+}
+
+/* Scrollbars: translucent track, keep the thumb visible */
+:root[zotero-mica] scrollbar {
+  background-color: transparent !important;
+}
+:root[zotero-mica] scrollbar thumb {
+  background: color-mix(in srgb, currentColor 28%, transparent) !important;
+}
+
+/* ------------------------------------------------------------------
+ * 3. Zotero reader PDF page background (the area behind the pages).
+ *
+ * The reader's chrome surfaces (toolbar, annotation/outline sidebar,
+ * split-view background) are made translucent automatically whenever the
+ * plugin sets the `zotero-mica` attribute on the reader.html <html>
+ * element (the `--color-*` overrides in section 1 already cover them via
+ * the `--material-*` aliases).
+ *
+ * What's left opaque is the PDF viewer's own page container
+ * (`viewer.html`): the grey scrim shown around/behind each page. Making
+ * that translucent is opt-in behind the `pdf-background` preference, so by
+ * default the material shows through the reader chrome but NOT behind the
+ * PDF pages (which would hurt readability). When enabled the plugin sets
+ * the `zotero-mica-pdf` attribute on the viewer document's <html> and the
+ * `--mica-intensity` custom property on it, and the rules below let the
+ * DWM backdrop shine through the page container. The pages themselves
+ * (`.pdfViewer .page`, `var(--background-color)`) are left untouched.
+ * ------------------------------------------------------------------ */
+:root[zotero-mica-pdf] {
+  --mica-tint: 249 249 249;
+}
+@media (prefers-color-scheme: dark) {
+  :root[zotero-mica-pdf] {
+    --mica-tint: 30 30 30;
+  }
+}
+:root[zotero-mica-pdf] body,
+:root[zotero-mica-pdf] #viewerContainer {
+  background-color: rgb(var(--mica-tint) / calc(0.45 + var(--mica-intensity, 0.5) * 0.25)) !important;
+}
+
+/* ------------------------------------------------------------------
+ * 4. Accessibility / high contrast: fall back to opaque so that no
+ *    backdrop is relied upon.
+ * ------------------------------------------------------------------ */
+@media (prefers-contrast) {
+  :root[zotero-mica],
+  :root[zotero-mica] window,
+  :root[zotero-mica] #zotero-pane,
+  :root[zotero-mica] #zotero-collections-pane,
+  :root[zotero-mica] #zotero-items-pane,
+  :root[zotero-mica] #zotero-item-pane,
+  :root[zotero-mica] #zotero-tag-selector,
+  :root[zotero-mica] .zotero-pane {
+    background-color: var(--color-background, field) !important;
+  }
+}

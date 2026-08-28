@@ -1,0 +1,11 @@
+node_modules
+.scaffold
+build
+dist
+*.log
+coverage
+test-results
+.DS_Store
+.env
+tsconfig.tsbuildinfo
+PLAN.md

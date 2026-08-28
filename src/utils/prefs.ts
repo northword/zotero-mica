@@ -1,0 +1,17 @@
+import { config } from "../../package.json";
+
+const PREFS_PREFIX = config.prefsPrefix;
+
+type PluginPrefsMap = _ZoteroTypes.Prefs["PluginPrefsMap"];
+
+export function getPref<K extends keyof PluginPrefsMap>(key: K): PluginPrefsMap[K] {
+  return Zotero.Prefs.get(`${PREFS_PREFIX}.${key}`, true) as PluginPrefsMap[K];
+}
+
+export function setPref<K extends keyof PluginPrefsMap>(key: K, value: PluginPrefsMap[K]): void {
+  return Zotero.Prefs.set(`${PREFS_PREFIX}.${key}`, value, true);
+}
+
+export function clearPref(key: string): void {
+  return Zotero.Prefs.clear(`${PREFS_PREFIX}.${key}`, true);
+}

@@ -1,0 +1,45 @@
+{
+  "name": "zotero-mica",
+  "type": "module",
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.18.0",
+  "description": "An addon for Zotero to apply Windows Mica / Acrylic materials to Zotero windows.",
+  "config": {
+    "addonName": "Mica for Zotero",
+    "addonID": "zotero-mica@northword.cn",
+    "addonRef": "mica",
+    "addonInstance": "Mica",
+    "prefsPrefix": "extensions.mica"
+  },
+  "author": "northword",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/northword/zotero-mica#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/northword/zotero-mica.git"
+  },
+  "bugs": {
+    "url": "https://github.com/northword/zotero-mica/issues"
+  },
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "zotero-plugin serve",
+    "build": "zotero-plugin build && tsc --noEmit",
+    "lint:check": "eslint . && autocorrect --lint",
+    "lint:fix": "eslint . --fix && autocorrect --fix",
+    "release": "zotero-plugin release",
+    "update-deps": "pnpx taze minor -w -i"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.2.0",
+    "@types/node": "^25.9.5",
+    "@zotero-plugin/eslint-config": "^0.6.10",
+    "autocorrect-node": "^2.14.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-format": "^2.0.1",
+    "typescript": "^6.0.3",
+    "zotero-plugin-scaffold": "^0.8.8",
+    "zotero-types": "^4.1.3"
+  }
+}

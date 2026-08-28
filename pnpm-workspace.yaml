@@ -1,0 +1,15 @@
+minimumReleaseAgeExclude:
+  - zotero-plugin-toolkit
+  - zotero-plugin-scaffold
+  - zotero-types
+
+shellEmulator: true
+
+trustPolicy: no-downgrade
+
+blockExoticSubdeps: false
+
+allowBuilds:
+  "@swc/core": false
+  es5-ext: false
+  esbuild: false
