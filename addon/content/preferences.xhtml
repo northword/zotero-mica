@@ -15,13 +15,18 @@
       native="true"
     />
 
+    <!-- Status -->
+    <description id="mica-status" class="mica-pref-description" />
+
     <!-- Material type -->
+    <hbox align="center">
     <label data-l10n-id="material-label" />
-    <radiogroup id="mica-material" preference="material">
-      <radio value="mica" data-l10n-id="material-mica" />
-      <radio value="mica-alt" data-l10n-id="material-mica-alt" />
-      <radio value="acrylic" data-l10n-id="material-acrylic" />
-    </radiogroup>
+      <radiogroup id="mica-material" preference="material" orient="horizontal">
+        <radio value="mica" data-l10n-id="material-mica" />
+        <radio value="mica-alt" data-l10n-id="material-mica-alt" />
+        <radio value="acrylic" data-l10n-id="material-acrylic" />
+      </radiogroup>
+    </hbox>
 
     <!-- Tint opacity -->
     <hbox align="center">
@@ -71,13 +76,12 @@
       data-l10n-id="pdf-background"
       preference="pdf-background"
       native="true"
+      disabled="true"
     />
     <description
       data-l10n-id="pdf-background-description"
       class="mica-pref-description"
     />
 
-    <!-- Status -->
-    <description id="mica-status" class="mica-pref-description" />
   </groupbox>
 </vbox>
