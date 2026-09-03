@@ -181,35 +181,51 @@
 }
 
 /* ------------------------------------------------------------------
- * 3. Zotero reader PDF page background (the area behind the pages).
+ * 3. Reader floating popups / menus stay OPAQUE.
  *
- * The reader's chrome surfaces (toolbar, annotation/outline sidebar,
- * split-view background) are made translucent automatically whenever the
- * plugin sets the `zotero-mica` attribute on the reader.html <html>
- * element (the `--color-*` overrides in section 1 already cover them via
- * the `--material-*` aliases).
+ * The reader's floating surfaces — the text-selection popup
+ * (`.view-popup.selection-popup`), the annotation & preview popups
+ * (`.view-popup`), the find bar (`.find-popup`), the appearance
+ * (reading-mode) / theme / label / print modal popups (`.modal-popup`),
+ * the right-click context menu (`.context-menu`) and the note-editor
+ * mini toolbar (`.editor-toolbar`) — paint their surface with the
+ * material variables that section 1 made translucent, which would turn
+ * every floating surface see-through over the PDF and wreck readability.
  *
- * What's left opaque is the PDF viewer's own page container
- * (`viewer.html`): the grey scrim shown around/behind each page. Making
- * that translucent is opt-in behind the `pdf-background` preference, so by
- * default the material shows through the reader chrome but NOT behind the
- * PDF pages (which would hurt readability). When enabled the plugin sets
- * the `zotero-mica-pdf` attribute on the viewer document's <html> and the
- * `--mica-intensity` custom property on it, and the rules below let the
- * DWM backdrop shine through the page container. The pages themselves
- * (`.pdfViewer .page`, `var(--background-color)`) are left untouched.
+ * `var()` references INSIDE a custom property are substituted when that
+ * custom property's computed value is determined — i.e. on the element
+ * that DECLARES it (the root) — so re-scoping `--color-*` on the popup
+ * elements cannot change surfaces painted via `--material-toolbar` /
+ * `--material-background` / `--material-panedivider`. The painted
+ * surfaces are therefore overridden directly with Zotero's OWN opaque
+ * composite tokens (`--color-quinary-on-background`), which section 1
+ * deliberately does not override. That keeps Zotero's default
+ * reader-theme colors (and any custom themes) intact, resolved by
+ * Zotero itself for light / dark via `data-color-scheme` /
+ * `prefers-color-scheme` — no colors are hardcoded here. Direct `var()`
+ * references — the popover pointer fills (`--color-background`) —
+ * resolve at the popup element, so `--color-background` is re-scoped
+ * there to match the opaque body. `.image-popup` (the full-screen image
+ * lightbox) keeps its own transparent base; its `.show` backdrop
+ * follows the opaque composite.
+ *
+ * These popups are plain DOM elements inside the reader window (no HWND
+ * of their own), so they cannot host a DWM backdrop; the opaque original
+ * colors are the honest fallback. When the plugin is disabled the
+ * attribute is absent and Zotero's design is untouched.
  * ------------------------------------------------------------------ */
-:root[zotero-mica-pdf] {
-  --mica-tint: 249 249 249;
+:root[zotero-mica] :is(.view-popup, .find-popup, .modal-popup, .context-menu, .editor-toolbar) {
+  /* Direct var() uses inside the popups (popover pointer fills, the
+     image-popup .show backdrop) resolve at this element — keep them
+     opaque and matching the new body surface. */
+  --color-background: var(--color-quinary-on-background);
 }
-@media (prefers-color-scheme: dark) {
-  :root[zotero-mica-pdf] {
-    --mica-tint: 30 30 30;
-  }
+:root[zotero-mica] :is(.view-popup, .find-popup, .modal-popup, .context-menu, .editor-toolbar):not(.image-popup) {
+  background-color: var(--color-quinary-on-background) !important;
 }
-:root[zotero-mica-pdf] body,
-:root[zotero-mica-pdf] #viewerContainer {
-  background-color: rgb(var(--mica-tint) / calc(0.45 + var(--mica-intensity, 0.5) * 0.25)) !important;
+:root[zotero-mica] .modal-popup input[type="text"],
+:root[zotero-mica] .modal-popup input[type="password"] {
+  background-color: var(--color-quinary-on-background) !important;
 }
 
 /* ------------------------------------------------------------------
