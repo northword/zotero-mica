@@ -14,7 +14,3 @@ pref("apply-dialogs", true);
 
 // Whether to use the Win10 acrylic fallback when DWM_SYSTEMBACKDROP is unavailable
 pref("fallback-win10", true);
-
-// Whether to apply the material to the PDF page background (the area
-// behind the pages inside the reader), instead of leaving it opaque.
-pref("pdf-background", false);

@@ -22,10 +22,6 @@ fallback-win10 =
     .label = Acrylic fallback on Windows 10
 fallback-win10-description = When the DWM system backdrop (Windows 11 22H2+) is unavailable, use the Acrylic blur via SetWindowCompositionAttribute.
 
-pdf-background =
-    .label = Apply to the PDF page background
-pdf-background-description = Also extend the material to the area behind the PDF pages inside the reader. Disabled by default for readability; the reader toolbar and annotation/outline sidebar always follow the material.
-
 status-full = Full support detected: Windows 11 22H2+ with DWM system backdrop.
 status-fallback = Fallback mode: DWM system backdrop is unavailable; Acrylic fallback will be used if enabled.
 status-disabled = Plugin is disabled.

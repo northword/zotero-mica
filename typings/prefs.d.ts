@@ -13,7 +13,6 @@ declare namespace _ZoteroTypes {
       "tint-opacity": number;
       "apply-dialogs": boolean;
       "fallback-win10": boolean;
-      "pdf-background": boolean;
     };
   }
 }

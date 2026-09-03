@@ -12,8 +12,6 @@ export type FluentMessageId =
   | 'material-label'
   | 'material-mica'
   | 'material-mica-alt'
-  | 'pdf-background'
-  | 'pdf-background-description'
   | 'prefs-title'
   | 'section-material'
   | 'status-disabled'

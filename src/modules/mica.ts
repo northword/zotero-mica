@@ -279,11 +279,10 @@ export class MicaManager {
           continue;
         }
         // Zotero reader: the reader.html document (toolbar, annotation /
-        // outline sidebar, split-view background) plus the pdf viewer
-        // iframes it hosts (the grey area behind the pages). The reader can
-        // live in its own window (reader.xhtml's `browser#reader`) or as a
-        // tab inside the main window (`browser.reader`), so we detect it by
-        // URL rather than by which chrome window contains it.
+        // outline sidebar, split-view background). The reader can live in
+        // its own window (reader.xhtml's `browser#reader`) or as a tab
+        // inside the main window (`browser.reader`), so we detect it by URL
+        // rather than by which chrome window contains it.
         if (this.isReaderFrame(frame, innerURL)) {
           if (this.applyReaderFrame(frame, material, intensity, remove)) {
             pending = true;
@@ -320,7 +319,7 @@ export class MicaManager {
   }
 
   /* ---------------------------------------------------------------- */
-  /* Reader support (reader.html + pdf viewer iframes)                */
+  /* Reader support (reader.html)                                  */
   /* ---------------------------------------------------------------- */
 
   /* The reader is served from this resource URL, regardless of whether it
@@ -336,16 +335,14 @@ export class MicaManager {
   }
 
   /**
-   * Apply the material to a reader frame's chain: the reader.html document
-   * (reader chrome surfaces) and every pdf viewer iframe it hosts (PDF page
-   * background, opt-in). Returns true when a retry could still help (the
-   * reader doc, or the opt-in viewer iframe, is still loading).
+   * Apply the material to a reader frame: the reader.html document (reader
+   * chrome surfaces). Returns true when a retry could still help (the
+   * reader doc is still loading).
    *
    * A single `zotero-mica` attribute on the reader's <html> turns the
    * toolbar / annotation & outline sidebar / split-view background
    * translucent via the agent sheet's `--color-*` overrides (same process,
-   * so the agent sheet reaches these documents). The viewer page background
-   * is opt-in behind the `pdf-background` pref via `zotero-mica-pdf`.
+   * so the agent sheet reaches these documents).
    */
   private applyReaderFrame(
     frame: any,
@@ -354,7 +351,6 @@ export class MicaManager {
     remove: boolean,
   ): boolean {
     let pending = false;
-    let sawViewer = false;
     try {
       const doc = (frame as any).contentDocument as Document | null;
       const root = doc?.documentElement as any;
@@ -373,92 +369,11 @@ export class MicaManager {
         root.style.setProperty("--mica-intensity", String(intensity));
         micalog("zotero-mica: applied to reader doc");
       }
-      // The pdf viewer iframes inside reader.html are created by React,
-      // so they appear asynchronously after reader.html loads.
-      for (const vframe of Array.from(root.querySelectorAll("iframe")) as any[]) {
-        try {
-          const vdoc = (vframe as any).contentDocument as Document | null;
-          const vRoot = vdoc?.documentElement as any;
-          const vURL = vdoc?.location?.href ?? "";
-          if (!vdoc || !vRoot || vURL === "about:blank" || vdoc?.readyState !== "complete") {
-            if (!remove) {
-              pending = true;
-            }
-            continue;
-          }
-          // Only the Zotero pdf viewer page sits behind the pages (its path
-          // differs between platform builds, so match on the filename).
-          if (!vURL.endsWith("viewer.html")) {
-            continue;
-          }
-          sawViewer = true;
-          this.applyViewerDoc(vdoc, vRoot, intensity, remove);
-        }
-        catch (e) {
-          micalog(`zotero-mica: reader viewer frame skipped - ${e}`);
-        }
-      }
-      // If the page background is opted in but the viewer iframe has not
-      // been created yet, keep polling briefly (React may still be
-      // rendering the view).
-      if (!remove && getPref("pdf-background") && !sawViewer) {
-        pending = true;
-      }
     }
     catch (e) {
       micalog(`zotero-mica: reader frame skipped - ${e}`);
     }
     return pending;
-  }
-
-  /**
-   * Apply/remove the translucent PDF page background. Opt-in behind the
-   * `pdf-background` pref; leaves the page canvases untouched.
-   *
-   * Two mechanisms, belt-and-braces:
-   *  1. an inline `<style>` injected into viewer.html with author-`!important`
-   *     rules — works even if the global agent sheet does not reach the
-   *     viewer document (e.g. process-isolated iframes), and applies to the
-   *     `#viewerContainer`/`body` however late they appear;
-   *  2. the `zotero-mica-pdf` attribute so the agent sheet's own rules apply
-   *     too when it does reach this document.
-   */
-  private applyViewerDoc(
-    doc: Document,
-    vRoot: any,
-    intensity: number,
-    remove: boolean,
-  ): void {
-    try {
-      let style = doc.querySelector("style[data-zotero-mica-pdf]") as any;
-      if (remove || !getPref("pdf-background")) {
-        style?.remove();
-        vRoot?.removeAttribute?.("zotero-mica-pdf");
-        vRoot?.style?.removeProperty?.("--mica-intensity");
-        return;
-      }
-      vRoot?.setAttribute?.("zotero-mica-pdf", "");
-      vRoot?.style?.setProperty?.("--mica-intensity", String(intensity));
-      if (!style) {
-        style = (() => {
-          const s = doc.createElement("style");
-          s.setAttribute("data-zotero-mica-pdf", "");
-          ((doc.head ?? doc.documentElement) as any).appendChild(s);
-          return s;
-        })();
-      }
-      style.textContent = `
-        :root { --mica-tint: 249 249 249; }
-        @media (prefers-color-scheme: dark) { :root { --mica-tint: 30 30 30; } }
-        body, #viewerContainer {
-          background-color: rgb(var(--mica-tint) / calc(0.45 + var(--mica-intensity, 0.5) * 0.25)) !important;
-        }
-      `;
-      micalog("zotero-mica: pdf page background enabled on viewer");
-    }
-    catch (e) {
-      micalog(`zotero-mica: viewer style inject failed - ${e}`);
-    }
   }
 
   private scheduleInnerDocRetry(
@@ -624,13 +539,13 @@ export class MicaManager {
    * window's tab container AFTER the main window has already been processed,
    * so nothing re-scans it until a preference change. Observing
    * `document-element-inserted` lets us re-apply the material the instant a
-   * reader.html (or its pdf viewer.html) document appears, in either mode.
+   * reader.html document appears, in either mode.
    *
    * The subject is the new Document and `data` is its URL; we locate the
    * embedding chrome window through the browser's docShell and re-run
    * applyMaterial() on it (idempotent) so the whole reader chain — window
-   * DWM backdrop, reader surfaces, opt-in pdf page background — is applied
-   * without waiting for a later preference change.
+   * DWM backdrop and reader surfaces — is applied without waiting for a
+   * later preference change.
    */
   private registerDocObserver() {
     if (this.docObserver) {
@@ -645,7 +560,7 @@ export class MicaManager {
         if (typeof url !== "string") {
           return;
         }
-        if (!url.endsWith("reader.html") && !url.endsWith("viewer.html")) {
+        if (!url.endsWith("reader.html")) {
           return;
         }
         try {
