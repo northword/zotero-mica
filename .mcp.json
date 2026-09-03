@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "zotero-dev": {
+      "command": "node",
+      "args": [
+        "node_modules/@introfini/mcp-server-zotero-dev/dist/index.js"
+      ],
+      "cwd": "."
+    }
+  }
+}
