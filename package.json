@@ -25,6 +25,7 @@
   "scripts": {
     "start": "zotero-plugin serve",
     "build": "zotero-plugin build && tsc --noEmit",
+    "test": "zotero-plugin test",
     "lint:check": "eslint . && autocorrect --lint",
     "lint:fix": "eslint . --fix && autocorrect --fix",
     "release": "zotero-plugin release",
